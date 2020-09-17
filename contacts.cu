@@ -1,3 +1,16 @@
+// Compile with "nvcc -o contacts --std=c++11 contacts.cu"
+// This is a simple kernel with a skeletal demo app showing how to use it.
+// It ended up a lot faster than I thought it would...
+//            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+// GPU activities:   46.91%  8.2560us         2  4.1280us  1.0880us  7.1680us  [CUDA memcpy HtoD]
+//                   43.27%  7.6160us         1  7.6160us  7.6160us  7.6160us  CalculateContacts(Atom const *, unsigned long, Atom const *, unsigned long, unsigned int*)
+//                    5.45%     960ns         1     960ns     960ns     960ns  [CUDA memcpy DtoH]
+//                    4.36%     768ns         1     768ns     768ns     768ns  [CUDA memset]
+//
+// Intentionally leaving out API stuff because this is not meant to be a standalone app, but
+// rather something incorporated into your pipeline.
+
+
 #include <unordered_map>
 #include <string>
 #include <vector>
