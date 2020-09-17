@@ -93,12 +93,12 @@ __global__ void CalculateContacts(const Atom* pdLigand,
                                   const size_t receptorAtoms,
                                   uint32_t* pdFeature)
 {
-__shared__ uint32_t sFeature[BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES];
+__shared__ uint32_t sFeature[FEATURES];
 __shared__ float3 sLigandPos[MAX_LIGAND_ATOMS];
 __shared__ int sLigandOffset[MAX_LIGAND_ATOMS];
 
     // Zero feature map
-    for (size_t i = threadIdx.x; i < BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES; i += blockDim.x)
+    for (size_t i = threadIdx.x; i < FEATURES; i += blockDim.x)
     {
         sFeature[i] = 0;
     }
@@ -143,7 +143,7 @@ __shared__ int sLigandOffset[MAX_LIGAND_ATOMS];
     
     
     // Output final counts
-    for (size_t i = threadIdx.x; i < BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES; i += blockDim.x)
+    for (size_t i = threadIdx.x; i < FEATURES; i += blockDim.x)
     {
         if (sFeature[i] > 0)
         {
@@ -209,9 +209,9 @@ int main(int argc, char** argv)
     
     // Allocate feature vector
     uint32_t* pdFeature;
-    cudaError_t status = cudaMalloc((void**)&pdFeature, BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES * sizeof(uint32_t));
+    cudaError_t status = cudaMalloc((void**)&pdFeature, FEATURES * sizeof(uint32_t));
     RTERROR(status, "main: Failed to allocate memory for feature vector.\n");
-    status = cudaMemset(pdFeature, 0, BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES * sizeof(uint32_t));
+    status = cudaMemset(pdFeature, 0, FEATURES * sizeof(uint32_t));
     RTERROR(status, "main: Failed to zero feature vector.\n");
     
     // Calculate contacts
@@ -220,12 +220,12 @@ int main(int argc, char** argv)
     CalculateContacts<<<blocks, blockSize>>>(pdLigand, vLigand.size(), pdReceptor, vReceptor.size(), pdFeature);
     
     // Download contacts
-    vector<uint32_t> vFeature(BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES);
-    status = cudaMemcpy(vFeature.data(), pdFeature, BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES * sizeof(uint32_t), cudaMemcpyDefault);
+    vector<uint32_t> vFeature(FEATURES);
+    status = cudaMemcpy(vFeature.data(), pdFeature, FEATURES * sizeof(uint32_t), cudaMemcpyDefault);
     
     
     // Print result
-    for (size_t i = 0; i < BINS * LIGAND_ATOM_TYPES * RECEPTOR_ATOM_TYPES; i++)
+    for (size_t i = 0; i < FEATURES; i++)
         printf("%3lu %6u\n", i, vFeature[i]);
  
     status = cudaFree(pdFeature);       
