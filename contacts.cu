@@ -67,7 +67,7 @@ bool ReadPDBQT(string fname, unordered_map<string, int>& map, vector<Atom>& vMol
             
                 sscanf(&buff[30], "%8f%8f%8f", &a._x,&a._y,&a._z);
                 a._type = got->second;     
-                printf("%8.3f %8.3f %8.3f %3s %d\n", a._x, a._y, a._z, type, a._type);
+                //printf("%8.3f %8.3f %8.3f %3s %d\n", a._x, a._y, a._z, type, a._type);
                 vMolecule.push_back(a);
             }
         }
