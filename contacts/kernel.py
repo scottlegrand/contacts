@@ -7,7 +7,8 @@ protein_map = {'A': 0, 'C': 0, 'N': 1, 'NA': 1, 'O': 2, 'OA': 2, 'S': 3, 'SA': 3
 
 contacts_kernel = cp.RawKernel(r'''
 
-extern "C" __global__ void CalculateContacts(const float* pdLigand_x,
+extern "C" __global__ void CalculateContacts(const unsigned int nligand,
+                                  const float* pdLigand_x,
                                   const float* pdLigand_y,
                                   const float* pdLigand_z,
                                   const int *pdLigand_type,
@@ -28,6 +29,10 @@ extern "C" __global__ void CalculateContacts(const float* pdLigand_x,
     const float cutoff2 = cutoff * cutoff;
     const int nfeatures = nbins*n_ligand_types*n_receptor_types;
 
+    unsigned int ligandIdx = blockIdx.y+gridDim.y*blockIdx.z;
+    if (ligandIdx >= nligand)
+        return;
+
     extern  __shared__ char s_data[];
     float3 *sLigandPos = (float3 *) s_data;
     unsigned int *sFeature = (unsigned int *) (sLigandPos + max_ligand_atoms);
@@ -39,7 +44,6 @@ extern "C" __global__ void CalculateContacts(const float* pdLigand_x,
         sFeature[i] = 0;
     }
 
-    unsigned int ligandIdx = blockIdx.y;
     unsigned int ligandAtoms = pdLigandOffset[ligandIdx+1] - pdLigandOffset[ligandIdx];
     size_t offset = pdLigandOffset[ligandIdx];
 
@@ -112,22 +116,30 @@ def compute(x_ligand, y_ligand, z_ligand, types_ligand, begin_offsets,
 
     features = cp.zeros((nligands,nfeatures),dtype=cp.int32)
 
-    contacts_kernel((nblocks,nligands,),(block_size,),(x_ligand,
-                                          y_ligand,
-                                          z_ligand,
-                                          types_ligand,
-                                          begin_offsets,
-                                          x_receptor,
-                                          y_receptor,
-                                          z_receptor,
-                                          types_receptor,
-                                          x_receptor.shape[0],
-                                          features,
-                                          cp.float32(cutoff),
-                                          cp.float32(binsize),
-                                          nbins,
-                                          n_receptor_types,
-                                          n_ligand_types,
-                                          max_ligand_atoms),
+    grid = [nblocks, nligands,1]
+    with cp.cuda.Device() as device:
+        if grid[1] > device.attributes['MaxGridDimY']:
+            grid[2] = grid[1]//device.attributes['MaxGridDimY']+1
+            grid[1] = device.attributes['MaxGridDimY']
+    grid = tuple(grid)
+
+    contacts_kernel(grid,(block_size,),(nligands,
+                                        x_ligand,
+                                        y_ligand,
+                                        z_ligand,
+                                        types_ligand,
+                                        begin_offsets,
+                                        x_receptor,
+                                        y_receptor,
+                                        z_receptor,
+                                        types_receptor,
+                                        x_receptor.shape[0],
+                                        features,
+                                        cp.float32(cutoff),
+                                        cp.float32(binsize),
+                                        nbins,
+                                        n_receptor_types,
+                                        n_ligand_types,
+                                        max_ligand_atoms),
                     shared_mem=shared_bytes)
     return features
