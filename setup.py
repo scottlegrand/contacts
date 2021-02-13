@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 
+kw = {}
+try:
+    import cupy
+except ImportError:
+    # declare dependency
+    kw['install_requires'] = ['cupy']
+
 setup(name='contacts',
       packages=['contacts'],
       version=0.1,
@@ -10,6 +17,6 @@ setup(name='contacts',
       url='https://github.com/scottlegrand/contacts',
       license='BSD',
       setup_requires=['cupy'],
-      install_requires=open('requirements.txt', 'r').readlines(),
-      keywords=['contact calculation', 'RFScore', 'GPU', 'virtual screening', 'docking']
+      keywords=['contact calculation', 'RFScore', 'GPU', 'virtual screening', 'docking'],
+      **kw
       )
