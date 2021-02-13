@@ -16,7 +16,6 @@ setup(name='contacts',
       author_email='slegrand@nvidia.com',
       url='https://github.com/scottlegrand/contacts',
       license='BSD',
-      setup_requires=['cupy'],
       keywords=['contact calculation', 'RFScore', 'GPU', 'virtual screening', 'docking'],
       **kw
       )
