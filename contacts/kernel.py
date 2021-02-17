@@ -1,5 +1,4 @@
 import cupy as cp
-import cudf
 
 ligand_map = {'A': 0, 'C': 0, 'N': 1, 'NA': 1, 'O': 2, 'OA': 2, 'F': 3, 'P': 4, 'S': 5, 'SA': 5, 'CL': 6,
               'BR': 7, 'I': 8}
